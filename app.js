@@ -6,7 +6,12 @@ function init() {
   if (localStorage.items) {
     itemsArray = JSON.parse(localStorage.items);
     for (var i = 0; i < itemsArray.length; i++) {
-      addHtmlTableRowFromLocalStorage(itemsArray[i].full_name, itemsArray[i].address, itemsArray[i].phone);
+      const params = {
+        full_name: itemsArray[i].full_name,
+        address: itemsArray[i].address,
+        phone: itemsArray[i].phone
+      };
+      addHtmlTableRowFromLocalStorage(params);
     }
     if (itemsArray.length == 0) {
       addHtmlTableRowFromJson(lpu);
@@ -14,9 +19,14 @@ function init() {
   } else {
     addHtmlTableRowFromJson(lpu);
   }
+  selectedRowToInput();
 }
 
-function addHtmlTableRowFromLocalStorage(full_name, address, phone) {
+function addHtmlTableRowFromLocalStorage({
+  full_name,
+  address,
+  phone
+}) {
   var newRow = tbody.insertRow(tbody.length);
   var cell1 = newRow.insertCell(0);
   var cell2 = newRow.insertCell(1);
@@ -25,8 +35,6 @@ function addHtmlTableRowFromLocalStorage(full_name, address, phone) {
   cell1.innerHTML = full_name;
   cell2.innerHTML = address;
   cell3.innerHTML = phone;
-
-  selectedRowToInput();
 }
 
 function addHtmlTableRowFromJson(jsonObj) {
@@ -45,32 +53,28 @@ function addHtmlTableRowFromJson(jsonObj) {
     cell2.innerHTML = address;
     cell3.innerHTML = phone;
 
-    selectedRowToInput();
-
     itemsArray.push(kliniks[i]);
   }
   localStorage.setItem('items', JSON.stringify(itemsArray));
 }
 
 function checkEmptyInput() {
-  var isEmpty = false,
-    full_name = document.getElementById('full_name').value,
-    address = document.getElementById('address').value,
-    phone = document.getElementById('phone').value;
+  var isEmpty = false;
 
-  if (full_name === "") {
-    newAlertForFullName();
-    isEmpty = true;
-  } else if (address === "") {
-    newAlertForAddress();
-    isEmpty = true;
-  } else if (phone === "") {
-    newAlertForPhone();
-    isEmpty = true;
+  const showError = {
+    full_name: () => makeError("Пожалуйста, введите наименование", "d1"),
+    address: () => makeError("Пожалуйста, введите адрес", "d2"),
+    phone: () => makeError("Пожалуйста, введите номер телефона", "d3")
   }
-  return isEmpty;
-}
 
+  const fields = ['full_name', 'address', 'phone'];
+  for (let i = 0; i < fields.length; i++) {
+    if (document.getElementById(fields[i]).value == "") {
+      showError[fields[i]]();
+      return isEmpty = true;
+    }
+  }
+}
 function addHtmlTableRowByCustomer() {
   if (!checkEmptyInput()) {
     var newRow = tbody.insertRow(tbody.length);
@@ -85,7 +89,12 @@ function addHtmlTableRowByCustomer() {
     itemsArray.push(item);
     localStorage.setItem('items', JSON.stringify(itemsArray));
 
-    selectedRowToInput();
+    newRow.onclick = function() {
+      rIndex = this.rowIndex - 1;
+      ['full_name', 'address', 'phone'].forEach((element, id) => {
+        document.getElementById(element).value = this.cells[id].innerHTML;
+      });
+    };
     rIndex = undefined;
   }
 }
@@ -130,31 +139,11 @@ function removeSelectedRow() {
   }
 }
 
-function newAlertForFullName() {
+function makeError(m, el) {
   let d = document.createElement('div');
   d.className = 'message';
-  d.innerHTML = "Пожалуйста, введите наименование.";
-  let full_name = document.getElementById('d1');
-  full_name.append(d);
-
-  setTimeout(() => d.remove(), 1000);
-}
-
-function newAlertForAddress() {
-  let d = document.createElement('div');
-  d.className = 'message';
-  d.innerHTML = "Пожалуйста, введите адрес.";
-  let address = document.getElementById('d2');
-  address.append(d);
-
-  setTimeout(() => d.remove(), 1000);
-}
-
-function newAlertForPhone() {
-  let d = document.createElement('div');
-  d.className = 'message';
-  d.innerHTML = "Пожалуйста, введите номер телефона.";
-  let phone = document.getElementById('d3');
+  d.innerHTML = m;
+  let phone = document.getElementById(el);
   phone.append(d);
 
   setTimeout(() => d.remove(), 1000);
